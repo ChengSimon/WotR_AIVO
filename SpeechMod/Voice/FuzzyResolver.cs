@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -197,12 +198,7 @@ public sealed class FuzzyResolver
         UnityEngine.Debug.Log("Loading preprocessed database...");
         try
         {
-            s_ModDirectory = Path.Combine(Constants.LOCAL_LOW_PATH!,
-                "Owlcat Games",
-                "Warhammer 40000 Rogue Trader",
-                "UnityModManager",
-                Constants.MOD_NAME);
-
+            s_ModDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var dbFile = Path.Combine(s_ModDirectory, "enGB-preprocessed.json");
 
             if (!File.Exists(dbFile))

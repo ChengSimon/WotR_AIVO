@@ -47,18 +47,25 @@ public static class Main
         var harmony = new Harmony(modEntry.Info?.Id);
         try {
 
-            string modLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            Debug.Log($"Adding {modLocation} to Wwise");
+            string soundBanksLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks");
+            Debug.Log($"Adding {soundBanksLocation} to Wwise");
 
             // Avoid referencing AK.Wwise.Unity.API -- probably can't redistribute it
             var akSoundEngine = AccessTools.TypeByName("AkSoundEngine");
             var addBasePath = akSoundEngine.GetMethod("AddBasePath", new Type[] { typeof(string) });
             var loadBank = akSoundEngine.GetMethod("LoadBank", new Type[] { typeof(string), typeof(uint).MakeByRefType() });
+            var bankPathResult = addBasePath.Invoke(null, new object[] { soundBanksLocation });
+            Debug.Log("Bank path: " + bankPathResult);
 
-            var result1 = addBasePath.Invoke(null, new object[] { modLocation });
-            var bankLoadArgs = new object[] { "w40krt_aivo.bnk", 0u };
-            var result2 = loadBank.Invoke(null, bankLoadArgs);
-            Debug.Log("Bank path: " + result1 + " Bank loading: " + result2 + " bank ID: " + bankLoadArgs[1]);
+            foreach (var file in Directory
+                .EnumerateFiles(soundBanksLocation, "*.bnk")
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            {
+                var fname = Path.GetFileName(file);
+                var bankLoadArgs = new object[] { fname, 0u };
+                var bankLoadResult = loadBank.Invoke(null, bankLoadArgs);
+                Debug.Log($"Bank loading {fname}: {bankLoadResult}, bank ID: {bankLoadArgs[1]}");
+            }
 
             harmony.PatchAll(Assembly.GetExecutingAssembly());
         } catch (Exception e) {

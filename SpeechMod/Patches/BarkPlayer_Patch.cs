@@ -110,6 +110,11 @@ public static class BarkExtensions
 
     public static void DoBark(Entity entity, string text, string voiceOver)
     {
+        if (Game.Instance!.IsModeActive(GameModeType.StarSystem))
+        {
+            // Force null speaker in space
+            SpeakBark(text, null);
+        }
         if (!string.IsNullOrWhiteSpace(voiceOver))
             return;
 
@@ -118,7 +123,7 @@ public static class BarkExtensions
 
     public static void SpeakBark(string text, Entity entity)
     {
-        GameObject obj = entity.View?.GO;
+        GameObject obj = entity?.View?.GO;
         if (obj == null)
         {
             obj = SoundState.Get2DSoundObject();

@@ -1,4 +1,5 @@
 ﻿using AiVoiceoverMod.Voice;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -39,7 +40,7 @@ public static class MenuGUI
         if (Main.Settings.PlaybackBarks)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Only playback barks if there's silence", GUILayout.ExpandWidth(false));
+            GUILayout.Label("Only playback barks if there's no dialogue", GUILayout.ExpandWidth(false));
             GUILayout.Space(10);
             Main.Settings.PlaybackBarkOnlyIfSilence = GUILayout.Toggle(Main.Settings.PlaybackBarkOnlyIfSilence, "Enabled");
             GUILayout.EndHorizontal();
@@ -48,6 +49,12 @@ public static class MenuGUI
             GUILayout.Label("Playback vicinity and cutscene triggered barks", GUILayout.ExpandWidth(false));
             GUILayout.Space(10);
             Main.Settings.PlaybackBarksInVicinity = GUILayout.Toggle(Main.Settings.PlaybackBarksInVicinity, "Enabled");
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Deduplicate barks withing {Math.Ceiling(Main.Settings.SoundDedupTimeout)}s (0 to disable)", GUILayout.ExpandWidth(false));
+            GUILayout.Space(10);
+            Main.Settings.SoundDedupTimeout = GUILayout.HorizontalSlider(Main.Settings.SoundDedupTimeout, 0, 10);
             GUILayout.EndHorizontal();
         }
 

@@ -20,6 +20,7 @@ using Kingmaker.Signals;
 using Kingmaker.UI.Common;
 using Kingmaker.Localization;
 using Kingmaker.Networking;
+using System.Collections.Generic;
 
 namespace AiVoiceoverMod.Patches;
 
@@ -119,6 +120,46 @@ public static class BarkExtensions
             return;
 
         SpeakBark(text, entity);
+    }
+
+    private static readonly Dictionary<string, DateTime> _lastSeen = new();
+    private static readonly TimeSpan _threshold = TimeSpan.FromSeconds(4);
+
+    // Allocate once
+    private static readonly List<string> _keysToRemove = new();
+
+    public static bool PlayedRecently(string value)
+    {
+        if (Main.Settings.SoundDedupTimeout <= 0)
+        {
+            Debug.LogWarning("Never played recently");
+            return false;
+        }
+        var threshold = TimeSpan.FromSeconds(Main.Settings.SoundDedupTimeout);
+
+        var now = DateTime.UtcNow;
+
+        if (_lastSeen.TryGetValue(value, out var lastTime) && (now - lastTime) <= threshold)
+        {
+            _lastSeen[value] = now;
+            Debug.Log("Blocking " + value);
+            return true;
+        }
+        _lastSeen[value] = now;
+
+        _keysToRemove.Clear();
+        // Cleanup
+        foreach (var kvp in _lastSeen)
+        {
+            if (now - kvp.Value > _threshold)
+                _keysToRemove.Add(kvp.Key);
+        }
+
+        foreach (var key in _keysToRemove)
+            _lastSeen.Remove(key);
+
+        Debug.Log("Allowing " + value);
+        return false;
     }
 
     public static void SpeakBark(string text, Entity entity)

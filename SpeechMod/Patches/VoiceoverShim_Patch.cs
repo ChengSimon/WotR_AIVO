@@ -1,16 +1,8 @@
 ﻿using AiVoiceoverMod.Voice;
 using HarmonyLib;
-using Kingmaker.Controllers.Dialog;
 using Kingmaker.Localization;
-using Kingmaker.Sound;
 using Kingmaker.Sound.Base;
-using Kingmaker.UI.Sound;
 using Kingmaker.Visual.Sound;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace AiVoiceoverMod.Patches
@@ -34,7 +26,10 @@ namespace AiVoiceoverMod.Patches
                     //Debug.Log("FIXING (Static): " + __instance.Key + ": " + __instance.Text);
                     __result = "ev_" + __instance.Key;
                 }
-                //__result = "PRL_TheodoraFirstConversation_16";
+                if (BarkExtensions.PlayedRecently(__result))
+                {
+                    __result = "";
+                }
             }
         }
 

@@ -20,6 +20,8 @@ public class Settings : UnityModManager.ModSettings
     public bool PlaybackBarkOnlyIfSilence = false;
     public bool PlaybackBarksInVicinity = true;
 
+    public float SoundDedupTimeout = 4f;
+
     public override void Save(UnityModManager.ModEntry modEntry)
     {
         Save(this, modEntry);

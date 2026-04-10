@@ -25,6 +25,7 @@ public static class Main
     public static Settings Settings;
     public static bool Enabled;
     public static string[] FontStyleNames = Enum.GetNames(typeof(FontStyles));
+    public static List<string> LoadedBanks = new();
 
     private static bool m_Loaded = false;
 
@@ -65,6 +66,7 @@ public static class Main
                 var bankLoadArgs = new object[] { fname, 0u };
                 var bankLoadResult = loadBank.Invoke(null, bankLoadArgs);
                 Debug.Log($"Bank loading {fname}: {bankLoadResult}, bank ID: {bankLoadArgs[1]}");
+                LoadedBanks.Add(fname);
             }
 
             harmony.PatchAll(Assembly.GetExecutingAssembly());

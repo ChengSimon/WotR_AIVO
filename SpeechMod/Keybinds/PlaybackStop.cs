@@ -35,7 +35,7 @@ public class PlaybackStop() : ModHotkeySettingEntry(KEY, TITLE, TOOLTIP, DEFAULT
 #if DEBUG
             Debug.Log($"{nameof(CommonPCView)}_{nameof(CommonPCView.BindViewImplementation)}_Postfix : {BIND_NAME}");
 #endif
-            if (!LocalizationManager.Instance!.CurrentPack!.TryGetText("osmodium.speechmod.feature.playback.stop.notification", out var text, false))
+            if (!LocalizationManager.Instance!.CurrentPack!.TryGetText("pas2k.speechmod.feature.playback.stop.notification", out var text, false))
                 _playbackStoppedText = text;
 
             if (Game.Instance.Keyboard.m_Bindings.Exists(binding => binding.Name.Equals(BIND_NAME)))

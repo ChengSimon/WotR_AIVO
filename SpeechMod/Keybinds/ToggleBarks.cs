@@ -37,12 +37,12 @@ public class ToggleBarks() : ModHotkeySettingEntry(KEY, TITLE, TOOLTIP, DEFAULT_
             Debug.Log($"{nameof(CommonPCView)}_{nameof(CommonPCView.BindViewImplementation)}_Postfix : {BIND_NAME}");
 #endif
 
-            if (LocalizationManager.Instance.CurrentPack?.TryGetText("osmodium.speechmod.feature.barks.toggle.on.notification", out var onText, false) == true)
+            if (LocalizationManager.Instance.CurrentPack?.TryGetText("pas2k.speechmod.feature.barks.toggle.on.notification", out var onText, false) == true)
             {
                 _barksTurnedOnText = onText;
             }
 
-            if (LocalizationManager.Instance.CurrentPack?.TryGetText("osmodium.speechmod.feature.barks.toggle.off.notification", out var offText, false) == true)
+            if (LocalizationManager.Instance.CurrentPack?.TryGetText("pas2k.speechmod.feature.barks.toggle.off.notification", out var offText, false) == true)
             {
                 _barksTurnedOffText = offText;
             }

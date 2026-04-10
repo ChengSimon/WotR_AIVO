@@ -12,8 +12,32 @@ public static class MenuGUI
     private static string m_MalePreviewText = "Speech Mod for Warhammer 40K: Rogue Trader - Male voice speech test";
     private static string m_ProtagonistPreviewText = "Speech Mod for Pathfinder Wrath of the Righteous - Protagonist voice speech test";
 
+    private static GUIStyle m_WarningStyle;
+    private static GUIStyle m_InfoStyle;
+
     public static void OnGui()
     {
+        if (Main.LoadedBanks.Count == 0)
+        {
+            m_WarningStyle ??= new GUIStyle(GUI.skin.box)
+            {
+                normal = { textColor = Color.yellow },
+                fontSize = 14,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                padding = new RectOffset(10, 10, 10, 10)
+            };
+            GUILayout.Label("WARNING: No soundbanks loaded! Put AI voiceover .bnk files into the soundbanks/ folder.", m_WarningStyle);
+        }
+        else
+        {
+            m_InfoStyle ??= new GUIStyle(GUI.skin.box)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                padding = new RectOffset(10, 10, 5, 5)
+            };
+            GUILayout.Label("Loaded soundbanks: " + string.Join(", ", Main.LoadedBanks), m_InfoStyle);
+        }
 
 #if DEBUG
         GUILayout.BeginVertical("", GUI.skin.box);

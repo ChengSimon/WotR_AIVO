@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using Kingmaker;
+using Kingmaker.UI.Common;
 using UniRx.Triggers;
 using UnityEngine;
 using UnityEngine.UI;
@@ -115,5 +117,33 @@ public static class UIHelper
             if (image != null)
                 image.raycastTarget = false;
         }
+    }
+
+    // --- WOTR canvas lookups (ported from PathfinderTextToSpeechMod) ---
+    // WOTR routes static-window UI through Game.Instance.UI.Canvas (or GlobalMapUI on the world map)
+    // and transient modals through FadeCanvas, rather than a single GameObject.Find root.
+
+    public static Transform GetUICanvas()
+    {
+        return UIUtility.IsGlobalMap()
+            ? Game.Instance.UI.GlobalMapUI.transform
+            : Game.Instance.UI.Canvas.transform;
+    }
+
+    public static Transform TryFindInStaticCanvas(string n)
+    {
+        return TryFindInStaticCanvas(n, n);
+    }
+
+    public static Transform TryFindInStaticCanvas(string canvasName, string globalMapName)
+    {
+        return UIUtility.IsGlobalMap()
+            ? Game.Instance.UI.GlobalMapUI.transform.TryFind(globalMapName)
+            : Game.Instance.UI.Canvas.transform.TryFind(canvasName);
+    }
+
+    public static Transform TryFindInFadeCanvas(string n)
+    {
+        return Game.Instance.UI.FadeCanvas.transform.TryFind(n);
     }
 }

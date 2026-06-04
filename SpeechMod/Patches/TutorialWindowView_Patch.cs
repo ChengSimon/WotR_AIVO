@@ -1,49 +1,77 @@
-﻿using HarmonyLib;
-using Kingmaker.UI.MVVM.View.Tutorial.PC;
+using HarmonyLib;
+using Kingmaker.UI;
+using Kingmaker.UI.MVVM._PCView.Tutorial;
+using Kingmaker.UI.MVVM._VM.Tutorial;
 using AiVoiceoverMod.Unity.Extensions;
-#if DEBUG
 using UnityEngine;
-#endif
 
 namespace AiVoiceoverMod.Patches;
 
-[HarmonyPatch(typeof(TutorialHintWindowPCView), nameof(TutorialHintWindowPCView.SetContent))]
-public class TutorialWindowView_Patch_Small
+[HarmonyPatch(typeof(TutorialWindowView<TutorialWindowVM>), nameof(TutorialWindowView<TutorialWindowVM>.SetPage))]
+public class TutorialWindowView_Patch
 {
-
-    private const string TUTORIAL_SMALL_TITLE_PATH = "/CommonPCView(Clone)/CommonCanvas/TutorialPCView/SmallWindowpPCView(Clone)/Window/Content/Header/Title";
-    private const string TUTORIAL_SMALL_TEXT_PATH = "/CommonPCView(Clone)/CommonCanvas/TutorialPCView/SmallWindowPCView(Clone)/Window/Content/Body/ScrollView/Viewport/Content/TutorialText";
-
-    public static void Postfix()
+    public static void Postfix(TutorialWindowView<TutorialWindowVM> __instance)
     {
         if (!Main.Enabled)
             return;
 
 #if DEBUG
-        Debug.Log($"{nameof(TutorialHintWindowPCView)}_SetContent_Postfix");
+        Debug.Log($"{nameof(TutorialWindowView<TutorialWindowVM>)}_{nameof(TutorialWindowView<TutorialWindowVM>.SetPage)}_Postfix");
 #endif
 
-        Hooks.HookUpTextToSpeechOnTransformWithPath(TUTORIAL_SMALL_TITLE_PATH);
-        Hooks.HookUpTextToSpeechOnTransformWithPath(TUTORIAL_SMALL_TEXT_PATH);
+        var smallWindow = UIHelper.TryFindInFadeCanvas("TutorialView/SmallWindow");
+        var bigWindow = UIHelper.TryFindInFadeCanvas("TutorialView/BigWindow");
+
+        if (smallWindow == null && bigWindow == null)
+            Debug.LogWarning("Postfix on SetPage but both small and big tutorial window is null!");
+
+        if (smallWindow != null && smallWindow.gameObject.activeInHierarchy)
+            HookSmallWindow(smallWindow);
+
+        if (bigWindow != null && bigWindow.gameObject.activeInHierarchy)
+            HookBigWindow(bigWindow);
     }
-}
 
-[HarmonyPatch(typeof(TutorialModalWindowPCView), nameof(TutorialModalWindowPCView.BindViewImplementation))]
-public class TutorialWindowView_Patch_Big
-{
-    private const string TUTORIAL_BIG_TITLE_PATH = "/CommonPCView(Clone)/CommonCanvas/TutorialPCView/BigWindowPCView(Clone)/Window/Content/Header/TitleGroup/Title";
-    private const string TUTORIAL_BIG_TEXT_PATH = "/CommonPCView(Clone)/CommonCanvas/TutorialPCView/BigWindowPCView(Clone)/Window/Content/Body/Bottom/ScrollView/Viewport/Content/TutorialText";
-
-    public static void Postfix()
+    private static void HookSmallWindow(Transform smallWindow)
     {
-        if (!Main.Enabled)
+        var content = smallWindow.TryFind("Window/Content/Body/ScrollView/ViewPort/Content");
+        if (content == null)
+        {
+#if DEBUG
+            Debug.LogWarning("Content of SMALL tutorial window was not found!");
+#endif
+            return;
+        }
+
+        content.HookupTextToSpeechOnTransform();
+
+        var viewPort = smallWindow.TryFind("Window/Content/Body/ScrollView/ViewPort");
+        if (viewPort == null)
             return;
 
-#if DEBUG
-        Debug.Log($"{nameof(TutorialModalWindowPCView)}_BindViewImplementation_Postfix");
-#endif
+        // Disable after first arrangement so hovering buttons/links doesn't jump the view to top.
+        var vlgw = viewPort.GetComponent<VerticalLayoutGroupWorkaround>();
+        if (vlgw == null)
+            return;
 
-        Hooks.HookUpTextToSpeechOnTransformWithPath(TUTORIAL_BIG_TITLE_PATH);
-        Hooks.HookUpTextToSpeechOnTransformWithPath(TUTORIAL_BIG_TEXT_PATH);
+        vlgw.CalculateLayoutInputHorizontal();
+
+        // Delay disabling the script until it has had a chance to run.
+        var monoBehaviour = viewPort.GetComponent<MonoBehaviour>();
+        monoBehaviour.ExecuteLater(0.5f, () => { vlgw.enabled = false; });
+    }
+
+    private static void HookBigWindow(Transform bigWindow)
+    {
+        var rightSideTutorialDescription = bigWindow.TryFind("Window/Content/Body/RightSide/Description");
+        if (rightSideTutorialDescription == null)
+        {
+#if DEBUG
+            Debug.LogWarning("Right side description of BIG tutorial window was not found!");
+#endif
+            return;
+        }
+
+        rightSideTutorialDescription.HookupTextToSpeechOnTransform();
     }
 }

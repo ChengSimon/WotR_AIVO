@@ -1,7 +1,6 @@
-﻿using Kingmaker.UI.Models.SettingsUI;
-using Kingmaker.UI.Models.SettingsUI.SettingAssets;
-using AiVoiceoverMod.Localization;
+﻿using AiVoiceoverMod.Localization;
 using UnityEngine;
+using Kingmaker.UI.SettingsUI;
 
 namespace AiVoiceoverMod.Configuration.UI;
 

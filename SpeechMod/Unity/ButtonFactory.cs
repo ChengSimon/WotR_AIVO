@@ -1,72 +1,88 @@
-﻿using Kingmaker.Blueprints;
-using Kingmaker.Code.UI.MVVM.VM.Tooltip.Templates;
-using Kingmaker.Code.UI.MVVM.VM.Tooltip.Utils;
+using Kingmaker.UI.Common;
+using Kingmaker.UI.MVVM._VM.Tooltip.Templates;
+using Kingmaker.UI.MVVM._VM.Tooltip.Utils;
 using Owlcat.Runtime.UI.Controls.Button;
 using AiVoiceoverMod.Unity.Extensions;
+using AiVoiceoverMod.Voice;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
+using Kingmaker.Visual.Sound;
 using GameObject = UnityEngine.GameObject;
 using Object = UnityEngine.Object;
-using AiVoiceoverMod.Voice;
-using Kingmaker.Visual.Sound;
 
 namespace AiVoiceoverMod.Unity;
 
 public static class ButtonFactory
 {
-    private const string ARROW_BUTTON_PATH = "/SurfacePCView(Clone)/SurfaceStaticPartPCView/StaticCanvas/SurfaceHUD/SurfaceActionBarPCView/MainContainer/ActionBarContainer/LeftSide/BackgroundContainer/Mask/Container/SurfaceActionBarPatyWeaponsView/CurrentSet/Layout/WeaponSlotsContainer/ConvertButton";
-    private const string ARROW_BUTTON_PREFAB_NAME = "SpeechMod_ArrowButtonPrefab";
-
-    private const string TEMP_ARROW_BUTTON_PATH = "SurfaceStaticPartPCView/StaticCanvas/SurfaceHUD/SurfaceActionBarPCView/MainContainer/ActionBarContainer/LeftSide/BackgroundContainer/Mask/Container/SurfaceActionBarPatyWeaponsView/CurrentSet/Layout/WeaponSlotsContainer/ConvertButton";
-    private const string TEMP_ARROW_BUTTON_PREFAB_NAME = "SpeechMod_Temporary_ArrowButtonPrefab";
-
-    private static GameObject ArrowButton => UIHelper.TryFind(ARROW_BUTTON_PATH)?.gameObject;
+    // WOTR play button: clone the dialog's own arrow ("ButtonEdge"). The RT source (ConvertButton / asset
+    // 6dda9b69...) does not exist in WOTR, which is why no button appeared. On the global map the dialog UI
+    // isn't present, so clone the combat log's ButtonEdge instead. Transform.Find locates these even while
+    // their windows are inactive, so cloning works in non-dialog windows (encyclopedia, journal) too.
+    private const string ARROW_BUTTON_PATH = "NestedCanvas1/DialogPCView/Body/View/Scroll View/ButtonEdge";
+    private const string ARROW_BUTTON_MAP_PATH = "CombatLog_New/Panel/ButtonEdge";
+    private const string MIRROR_MAP_PATH = "BookEventView/ContentWrapper/Window/Mirror/Mirror";
+    private const string MIRROR_STATIC_CANVAS_PATH = "NestedCanvas1/BookEventPCView/ContentWrapper/Window/Mirror/Mirror";
 
     private static GameObject CreatePlayButton(Transform parent, UnityAction action, string text, string toolTip)
     {
-        GameObject buttonGameObject;
+        GameObject arrowButton;
 
-        if (ArrowButton != null)
+        if (UIUtility.IsGlobalMap())
         {
-            buttonGameObject = Object.Instantiate(ArrowButton, parent);
-            buttonGameObject!.name = ARROW_BUTTON_PREFAB_NAME;
+            arrowButton = UIHelper.TryFindInStaticCanvas(ARROW_BUTTON_MAP_PATH)?.gameObject;
+            FixMirrorRaycastTarget(UIHelper.TryFindInStaticCanvas(MIRROR_MAP_PATH));
         }
         else
         {
-            // Asset ID that contains the arrow button
-            var asset = ResourcesLibrary.TryGetResource<GameObject>("6dda9b696601b7847996fe3926c42b50");
-            var button = asset?.transform.TryFind(TEMP_ARROW_BUTTON_PATH)?.gameObject;
-            buttonGameObject = Object.Instantiate(button, parent);
-            buttonGameObject!.name = TEMP_ARROW_BUTTON_PREFAB_NAME;
+            arrowButton = UIHelper.TryFindInStaticCanvas(ARROW_BUTTON_PATH)?.gameObject;
+            FixMirrorRaycastTarget(UIHelper.TryFindInStaticCanvas(MIRROR_STATIC_CANVAS_PATH));
         }
 
-        buttonGameObject.transform!.localRotation = Quaternion.Euler(0, 0, 270);
+        if (arrowButton == null)
+        {
+            Debug.LogWarning("Arrow button (ButtonEdge) source not found; cannot create play button.");
+            return null;
+        }
 
-        SetupOwlcatMultiButton(buttonGameObject, action, text, toolTip);
+        var buttonGameObject = Object.Instantiate(arrowButton, parent);
+        SetupOwlcatButton(buttonGameObject, action, text, toolTip);
 
         return buttonGameObject;
     }
 
-    private static void SetupOwlcatMultiButton(GameObject buttonGameObject, UnityAction action, string text, string toolTip)
+    private static void FixMirrorRaycastTarget(Transform mirror)
+    {
+        // The "Mirror" overlay sits above the cue text and would otherwise eat clicks on the new button.
+        var image = mirror?.GetComponent<Image>();
+        if (image != null)
+            image.raycastTarget = false;
+    }
+
+    private static void SetupOwlcatButton(GameObject buttonGameObject, UnityAction action, string text, string toolTip)
     {
         if (buttonGameObject == null)
             return;
 
-        var button = buttonGameObject.GetComponent<OwlcatMultiButton>();
+        var button = buttonGameObject.GetComponent<OwlcatButton>();
         if (button == null)
         {
-            button = buttonGameObject.AddComponent<OwlcatMultiButton>();
+            Debug.LogWarning("Cloned ButtonEdge has no OwlcatButton; cannot wire click.");
+            return;
         }
 
-        button!.OnLeftClick!.RemoveAllListeners();
+        button.OnLeftClick.RemoveAllListeners();
+
+        // The dialog ButtonEdge ships with a persistent listener (advance dialog); disable it on our clone.
+        if (button.OnLeftClick.GetPersistentEventCount() > 0)
+            button.OnLeftClick.SetPersistentListenerState(0, UnityEventCallState.Off);
+
         button.OnLeftClick.AddListener(action);
 
         if (!string.IsNullOrWhiteSpace(text))
             button.SetTooltip(new TooltipTemplateSimple(text, toolTip));
-
-        button.SetInteractable(true);
     }
 
     public static GameObject TryCreatePlayButton(Transform parent, UnityAction action, string text = null, string tooltip = null)

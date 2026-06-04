@@ -1,8 +1,6 @@
 ﻿using HarmonyLib;
 using Kingmaker;
 using Kingmaker.Settings;
-using Kingmaker.UI.InputSystems;
-using Kingmaker.UI.Models.SettingsUI;
 using AiVoiceoverMod.Configuration.Settings;
 using AiVoiceoverMod.Configuration.UI;
 using AiVoiceoverMod.Localization;
@@ -10,6 +8,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static UnityModManagerNet.UnityModManager;
+using Kingmaker.UI.SettingsUI;
+using Kingmaker.UI;
+using System.IO;
+using System.Reflection;
+using UnityEngine;
 
 namespace AiVoiceoverMod.Configuration;
 
@@ -27,7 +30,8 @@ public class ModConfigurationManager
         Instance.HarmonyInstance = harmonyInstance;
         Instance.ModEntry = modEntry;
         Instance.SettingsPrefix = settingsPrefix;
-        ModLocalizationManager.Init();
+        // ModLocalizationManager.Init is a Harmony postfix on LocalizationManager.Init now; it must not be
+        // called here at mod-load time, when SettingsRoot/CurrentLocale aren't initialized yet (NRE).
     }
 
     private bool Initialized = false;
@@ -45,7 +49,7 @@ public class ModConfigurationManager
 
         if (ModHotkeySettingEntry.ReSavingRequired)
         {
-            SettingsController.Instance.SaveAll();
+            SettingsController.SaveAll();
             Instance.ModEntry.Logger.Log("Hotkey settings were migrated");
         }
     }
@@ -73,6 +77,36 @@ public static class SettingsUIPatches
                 OwlcatUITools.MakeSettingsGroup($"{ModConfigurationManager.Instance.SettingsPrefix}.group.{settings.Key}", "Speech Mod",
                     settings.Value?.Select(x => x.GetUISettings()).ToArray()
                 ));
+        }
+
+
+        try
+        {
+
+            string soundBanksLocation = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "soundbanks");
+            Debug.Log($"Adding {soundBanksLocation} to Wwise");
+
+            var bankPathResult = AkSoundEngine.AddBasePath(soundBanksLocation);
+
+            foreach (var file in Directory
+                .EnumerateFiles(soundBanksLocation, "*.bnk")
+                .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            {
+                var fname = Path.GetFileName(file);
+                //var bankLoadArgs = new object[] { fname, 0u };
+                uint bankId;
+                var bankLoadResult = AkSoundEngine.LoadBank(fname, out bankId);
+                Debug.Log($"Bank loading {fname}: {bankLoadResult}, bank ID: {bankId}");
+                Main.LoadedBanks.Add(fname);
+            }
+            AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", 0f);
+            AkSoundEngine.SetRTPCValue("AivoPitch", 0f);
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.Message);
+            Debug.Log(e);
+            throw e;
         }
     }
 

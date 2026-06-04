@@ -1,5 +1,5 @@
-﻿using Kingmaker.Localization;
-using Kingmaker.Localization.Enums;
+﻿using HarmonyLib;
+using Kingmaker.Localization;
 using Kingmaker.Localization.Shared;
 using Newtonsoft.Json;
 using AiVoiceoverMod.Configuration;
@@ -8,22 +8,33 @@ using System.IO;
 
 namespace AiVoiceoverMod.Localization;
 
+[HarmonyPatch]
 internal class ModLocalizationManager
 {
     private static ModLocalizationPack _enPack;
 
+    // Runs when the game initializes localization (a postfix on LocalizationManager.Init), NOT at mod-load
+    // time — SettingsRoot/CurrentLocale aren't ready then. Only loads the pack; applying strings is deferred
+    // to the OnLocaleChanged postfix below, matching PathfinderTextToSpeechMod.
+    [HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.Init))]
+    [HarmonyPostfix]
     public static void Init()
     {
         _enPack = LoadPack(Locale.enGB);
+    }
 
-        ApplyLocalization(LocalizationManager.Instance!.CurrentLocale);
-
-        (LocalizationManager.Instance as ILocalizationProvider).LocaleChanged += ApplyLocalization;
+    // WOTR has no LocalizationManager.LocaleChanged event (the RT API used .Instance as ILocalizationProvider).
+    // Locale changes are observed by patching LocalizationManager.OnLocaleChanged, matching PathfinderTextToSpeechMod.
+    [HarmonyPatch(typeof(LocalizationManager), nameof(LocalizationManager.OnLocaleChanged))]
+    [HarmonyPostfix]
+    public static void OnLocaleChanged_Postfix()
+    {
+        ApplyLocalization(LocalizationManager.CurrentLocale);
     }
 
     public static void ApplyLocalization(Locale currentLocale)
     {
-        var currentPack = LocalizationManager.Instance.CurrentPack;
+        var currentPack = LocalizationManager.CurrentPack;
         if (currentPack == null) return;
         foreach (var entry in _enPack.Strings)
         {

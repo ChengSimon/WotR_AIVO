@@ -1,5 +1,5 @@
 using Kingmaker;
-using Kingmaker.Sound.Base;
+using Kingmaker.Sound;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -175,21 +175,23 @@ public sealed class FuzzyResolver
 
     public static bool ResolveAndPlay(string text, string kind, GameObject obj)
     {
-        var mcName = Game.Instance.Player.MainCharacterEntity?.CharacterName;
+
+        var mcName = Game.Instance?.Player?.MainCharacter.Value?.CharacterName;
         if (mcName != null)
         {
             // A bit hacky, but improves matching performance a lot!
             text = text.Replace(mcName, "{name}");
         }
-        // Strip XML tags and normalize text for querying
+        // Strip XML tags and glossary markup ({g|Encyclopedia:DC}DC{/g} -> DC), keeping the visible text.
         var cleanText = new Regex("<[^>]+>").Replace(text, "");
+        cleanText = Regex.Replace(cleanText, @"\{g\|[^}]*\}|\{/g\}", "");
         cleanText = cleanText.Trim();
 
         ResolveResult res = Singleton.Query(cleanText);
 #if DEBUG
         Debug.Log($"{kind} (FUZZY): {res.Best.Id}");
 #endif
-        SoundEventsManager.PostEvent("ev_" + res.Best.Id, obj);
+        SoundEventsManager.PostEvent("evt_" + res.Best.Id, obj);
         return false;
     }
 

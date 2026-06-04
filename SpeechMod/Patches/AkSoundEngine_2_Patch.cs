@@ -11,17 +11,17 @@ namespace AiVoiceoverMod.Patches
 {
     public class AkSoundEngine_2_Patch
     {
-        public static MethodBase TargetMethod()
-        {
-            foreach (var m in AkSoundEngine_Patch.akSoundEngine.GetMethods())
-            {
-                if (m.Name == "PostEvent" && m.GetParameters().Length == 8 && m.GetParameters()[0].ParameterType == typeof(string))
-                {
-                    return m;
-                }
-            }
-            return null;
-        }
+        //public static MethodBase TargetMethod()
+        //{
+        //    foreach (var m in AkSoundEngine_Patch.akSoundEngine.GetMethods())
+        //    {
+        //        if (m.Name == "PostEvent" && m.GetParameters().Length == 8 && m.GetParameters()[0].ParameterType == typeof(string))
+        //        {
+        //            return m;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         //[HarmonyPrefix]
         //public static bool Prefix(string in_pszEventName)

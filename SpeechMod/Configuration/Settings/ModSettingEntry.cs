@@ -1,4 +1,4 @@
-﻿using Kingmaker.UI.Models.SettingsUI.SettingAssets;
+﻿using Kingmaker.UI.SettingsUI;
 using System;
 
 namespace AiVoiceoverMod.Configuration.Settings;

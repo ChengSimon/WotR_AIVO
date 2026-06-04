@@ -1,8 +1,10 @@
-﻿using HarmonyLib;
-using Kingmaker.Code.UI.MVVM.View.ServiceWindows.Encyclopedia.Base;
-using Kingmaker.Code.UI.MVVM.View.ServiceWindows.Encyclopedia.Blocks;
+using HarmonyLib;
+using Kingmaker.UI.MVVM._PCView.ServiceWindows.Encyclopedia;
 using AiVoiceoverMod.Unity;
 using AiVoiceoverMod.Unity.Extensions;
+using AiVoiceoverMod.Voice;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 
 namespace AiVoiceoverMod.Patches;
@@ -10,50 +12,75 @@ namespace AiVoiceoverMod.Patches;
 [HarmonyPatch]
 public static class Encyclopedia_Patch
 {
-    private const string PAGE_VIEW_ADDITION_BUTTON_NAME = "SpeechMod_AdditionButton_EncyclopediaPageBaseView";
-    private const string PAGE_VIEW_GLOSSARY_BUTTON_NAME = "SpeechMod_GlossaryButton_EncyclopediaPageBaseView";
-    private const string TEXT_VIEW_GLOSSARY_BUTTON_NAME = "SpeechMod_GlossaryButton_EncyclopediaPageBlockTextPCView";
-    private const string BLOCK_VIEW_GLOSSARY_BUTTON_NAME = "SpeechMod_GlossaryButton_EncyclopediaPageBlockGlossaryEntryPCView";
+    private const string ButtonName = "EncyclopediaSpeechButton";
 
-    [HarmonyPatch(typeof(EncyclopediaPageBaseView), nameof(EncyclopediaPageBaseView.BindViewImplementation))]
+    private const string BODY_GROUP_PATH = "ServiceWindowsPCView/Background/Windows/EncyclopediaPCView/EncyclopediaPageView/BodyGroup";
+
     [HarmonyPostfix]
-    public static void AddTitleHook(EncyclopediaPageBaseView __instance)
+    [HarmonyPatch(typeof(EncyclopediaPageBaseView), "Initialize")]
+    public static void Initialize_Postfix(EncyclopediaPageBaseView __instance)
     {
         if (!Main.Enabled)
             return;
-
-#if DEBUG
-        Debug.Log($"{nameof(EncyclopediaPageBaseView)}_BindViewImplementation_Postfix");
-#endif
 
         __instance.m_Title.HookupTextToSpeech();
-        __instance.m_PageAdditionText.TryAddButtonToTextMeshPro(PAGE_VIEW_ADDITION_BUTTON_NAME, new Vector2(24f, -4f), new Vector3(0.8f, 0.8f, 1f));
-        __instance.m_GlossaryEntryBlockPrefab?.m_Description.TryAddButtonToTextMeshPro(PAGE_VIEW_GLOSSARY_BUTTON_NAME, new Vector2(0f, -4f), new Vector3(0.8f, 0.8f, 1f));
     }
 
-    [HarmonyPatch(typeof(EncyclopediaPageBlockTextPCView), nameof(EncyclopediaPageBlockTextPCView.BindViewImplementation))]
     [HarmonyPostfix]
-    public static void AddPageBlockTextHook(EncyclopediaPageBlockTextPCView __instance)
+    [HarmonyPatch(typeof(EncyclopediaPagePCView), "UpdateView")]
+    public static void UpdateView_Postfix()
     {
         if (!Main.Enabled)
             return;
-#if DEBUG
-        Debug.Log($"{nameof(EncyclopediaPageBlockTextPCView)}_BindViewImplementation_Postfix");
-#endif
-        __instance.m_Text.TryAddButtonToTextMeshPro(TEXT_VIEW_GLOSSARY_BUTTON_NAME, new Vector2(-1f, -4f), new Vector3(0.8f, 0.8f, 1f));
-    }
 
-    [HarmonyPatch(typeof(EncyclopediaPageBlockGlossaryEntryPCView), nameof(EncyclopediaPageBlockGlossaryEntryPCView.BindViewImplementation))]
-    [HarmonyPostfix]
-    public static void AddPageBlockGlossaryHooks(EncyclopediaPageBlockGlossaryEntryPCView __instance)
-    {
-        if (!Main.Enabled)
+#if DEBUG
+        Debug.Log($"{nameof(EncyclopediaPagePCView)}_UpdateView_Postfix");
+#endif
+
+        var bodyGroup = UIHelper.TryFindInStaticCanvas(BODY_GROUP_PATH);
+        if (bodyGroup == null)
+        {
+#if DEBUG
+            Debug.Log("Couldn't find BodyGroup...");
+#endif
             return;
-#if DEBUG
-        Debug.Log($"{nameof(EncyclopediaPageBlockGlossaryEntryPCView)}_BindViewImplementation_Postfix");
-#endif
+        }
 
-        __instance.m_Title.HookupTextToSpeech();
-        __instance.m_Description.TryAddButtonToTextMeshPro(BLOCK_VIEW_GLOSSARY_BUTTON_NAME, new Vector2(-2f, -4f), new Vector3(0.8f, 0.8f, 1f));
+        var content = bodyGroup.TryFind("ObjectivesGroup/StandardScrollView/Viewport/Content");
+        if (content == null)
+            return;
+
+        // Only get the texts that are not in the unit view.
+        var allTexts = content.gameObject?.GetComponentsInChildren<TextMeshProUGUI>(true)
+            .Where(t => t.transform.name.Equals("Text")).ToArray();
+        if (allTexts == null || allTexts.Length == 0)
+            return;
+
+        foreach (var textMeshPro in allTexts)
+        {
+            var parent = textMeshPro.transform;
+            var button = parent.TryFind(ButtonName)?.gameObject;
+
+            if (button != null)
+            {
+                button.transform.localRotation = Quaternion.Euler(0, 0, 90);
+                button.RectAlignTopLeft();
+                button.transform.localPosition = new Vector3(-36, -26, 0);
+                continue;
+            }
+
+            button = ButtonFactory.TryCreatePlayButton(parent, () =>
+            {
+                VoiceResolver.PlayByText(textMeshPro.text, "Encyclopedia");
+            });
+            if (button == null)
+                continue;
+
+            button.name = ButtonName;
+            button.transform.localRotation = Quaternion.Euler(0, 0, 90);
+            button.RectAlignTopLeft();
+            button.transform.localPosition = new Vector3(-36, -26, 0);
+            button.SetActive(true);
+        }
     }
 }

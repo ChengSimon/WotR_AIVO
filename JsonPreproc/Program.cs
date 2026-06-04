@@ -3,26 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 // ----------------------------
 // Models
 // ----------------------------
 
-// Input format:
+// Input format (WOTR: Wrath_Data/StreamingAssets/Localization/enGB.json):
 // {
+//   "$id": "1",                       <- Json.NET reference id at the root; ignored on read
 //   "strings": {
-//     "<GUID>": { "Offset": 0, "Text": "..." },
+//     "<GUID>": "text",               <- value is the string directly (RT wrapped it in { Offset, Text })
 //     ...
 //   }
 // }
 public sealed class SourceRoot
 {
-    public Dictionary<string, SourceString> strings { get; set; } = new();
-}
-public sealed class SourceString
-{
-    public int Offset { get; set; }
-    public string Text { get; set; } = "";
+    public Dictionary<string, string> strings { get; set; } = new();
 }
 
 // Precompiled format we write/read:
@@ -310,9 +307,10 @@ public static class Program
         var mh = new MinHasher(seeds);
 
         var entries = new List<DbEntry>(src.strings.Count);
-        foreach (var (guid, payload) in src.strings)
+        foreach (var (guid, value) in src.strings)
         {
-            var text = payload?.Text ?? "";
+            // Strip glossary markup so the DB text/signature match the runtime query cleaning in FuzzyResolver.
+            var text = StripGlossary(value ?? "");
             entries.Add(new DbEntry
             {
                 id = guid,
@@ -331,4 +329,10 @@ public static class Program
         var json = JsonSerializer.Serialize(outObj, new JsonSerializerOptions { WriteIndented = false });
         File.WriteAllText(outputPath, json);
     }
+
+    // Removes glossary markup, keeping the visible text: "{g|Encyclopedia:DC}DC{/g}" -> "DC".
+    // Must stay in sync with the same strip applied to runtime queries in FuzzyResolver.ResolveAndPlay.
+    private static readonly Regex s_GlossaryRegex = new(@"\{g\|[^}]*\}|\{/g\}", RegexOptions.Compiled);
+
+    private static string StripGlossary(string s) => string.IsNullOrEmpty(s) ? s : s_GlossaryRegex.Replace(s, "");
 }

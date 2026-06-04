@@ -1,10 +1,10 @@
 ﻿using Kingmaker;
 using Kingmaker.Settings;
-using Kingmaker.Settings.Entities;
-using Kingmaker.UI.Models.SettingsUI.SettingAssets;
+using Kingmaker.UI;
 using AiVoiceoverMod.Localization;
 using System;
 using UnityEngine;
+using Kingmaker.UI.SettingsUI;
 
 namespace AiVoiceoverMod.Configuration.Settings;
 
@@ -19,7 +19,7 @@ public abstract class ModHotkeySettingEntry : ModSettingEntry
     {
         try
         {
-            SettingEntity = new SettingsEntityKeyBindingPair(SettingsController.Instance, $"{ModConfigurationManager.Instance?.SettingsPrefix}.newcontrols.{Key}", new(defaultKeyPairString), false, true);
+            SettingEntity = new SettingsEntityKeyBindingPair($"{ModConfigurationManager.Instance?.SettingsPrefix}.newcontrols.{Key}", new(defaultKeyPairString, KeyboardAccess.GameModesGroup.All), false, true);
         }
         catch (Exception ex)
         {
@@ -46,7 +46,6 @@ public abstract class ModHotkeySettingEntry : ModSettingEntry
         keyBindSetting.m_Description = ModLocalizationManager.CreateString($"{ModConfigurationManager.Instance?.SettingsPrefix}.feature.{Key}.description", Title);
         keyBindSetting.m_TooltipDescription = ModLocalizationManager.CreateString($"{ModConfigurationManager.Instance?.SettingsPrefix}.feature.{Key}.tooltip-description", Tooltip);
         keyBindSetting.name = $"{ModConfigurationManager.Instance?.SettingsPrefix}.newcontrols.ui.{Key}";
-        keyBindSetting.m_EncyclopediaDescription = new();
         return keyBindSetting;
     }
 

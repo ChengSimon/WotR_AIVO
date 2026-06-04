@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using Kingmaker.Localization;
-using Kingmaker.UI.Sound;
 using Kingmaker.Visual.Sound;
 using System;
 using System.Collections.Generic;

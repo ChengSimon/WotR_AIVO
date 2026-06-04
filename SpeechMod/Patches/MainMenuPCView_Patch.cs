@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
-using Kingmaker.Code.UI.MVVM.View.MainMenu.PC;
 using AiVoiceoverMod.Unity.Extensions;
+using Kingmaker.UI.MVVM._PCView.MainMenu;
+
 #if DEBUG
 using UnityEngine;
 #endif

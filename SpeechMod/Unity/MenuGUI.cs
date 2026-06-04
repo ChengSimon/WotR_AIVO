@@ -1,16 +1,10 @@
-﻿using AiVoiceoverMod.Voice;
-using System;
-using System.Linq;
+﻿using System;
 using UnityEngine;
 
 namespace AiVoiceoverMod.Unity;
 
 public static class MenuGUI
 {
-    private static string m_NarratorPreviewText = "Speech Mod for Warhammer 40K: Rogue Trader - Narrator voice speech test";
-    private static string m_FemalePreviewText = "Speech Mod for Warhammer 40K: Rogue Trader - Female voice speech test";
-    private static string m_MalePreviewText = "Speech Mod for Warhammer 40K: Rogue Trader - Male voice speech test";
-    private static string m_ProtagonistPreviewText = "Speech Mod for Pathfinder Wrath of the Righteous - Protagonist voice speech test";
 
     private static GUIStyle m_WarningStyle;
     private static GUIStyle m_InfoStyle;

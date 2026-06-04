@@ -1,10 +1,9 @@
 ﻿using HarmonyLib;
 using Kingmaker;
-using Kingmaker.Code.UI.MVVM.View.Common.PC;
-using Kingmaker.Code.UI.MVVM.VM.WarningNotification;
-using Kingmaker.Localization;
 using AiVoiceoverMod.Configuration.Settings;
 using System;
+using Kingmaker.UI.MVVM._PCView.Common;
+
 #if DEBUG
 using UnityEngine;
 #endif
@@ -37,15 +36,9 @@ public class ToggleBarks() : ModHotkeySettingEntry(KEY, TITLE, TOOLTIP, DEFAULT_
             Debug.Log($"{nameof(CommonPCView)}_{nameof(CommonPCView.BindViewImplementation)}_Postfix : {BIND_NAME}");
 #endif
 
-            if (LocalizationManager.Instance.CurrentPack?.TryGetText("pas2k.speechmod.feature.barks.toggle.on.notification", out var onText, false) == true)
-            {
-                _barksTurnedOnText = onText;
-            }
 
-            if (LocalizationManager.Instance.CurrentPack?.TryGetText("pas2k.speechmod.feature.barks.toggle.off.notification", out var offText, false) == true)
-            {
-                _barksTurnedOffText = offText;
-            }
+            //_barksTurnedOnText = LocalizationManager.CurrentPack.GetText("pas2k.speechmod.feature.barks.toggle.on.notification");
+            //_barksTurnedOffText = LocalizationManager.CurrentPack.GetText("pas2k.speechmod.feature.barks.toggle.off.notification");
 
             if (Game.Instance.Keyboard.m_Bindings.Exists(binding => binding.Name.Equals(BIND_NAME)))
             {
@@ -65,7 +58,7 @@ public class ToggleBarks() : ModHotkeySettingEntry(KEY, TITLE, TOOLTIP, DEFAULT_
 #if DEBUG
             Debug.Log($"Barks: {Main.Settings.PlaybackBarks}");
 #endif
-            if (instance == null || instance.m_WarningsTextView == null)
+            if (instance == null || instance.m_WarningsText == null)
                 return;
 
             var text = Main.Settings.PlaybackBarks ? _barksTurnedOnText : _barksTurnedOffText;

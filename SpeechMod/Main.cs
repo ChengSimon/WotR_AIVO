@@ -41,6 +41,7 @@ public static class Main
         modEntry!.OnToggle = OnToggle;
         modEntry!.OnGUI = OnGui;
         modEntry!.OnSaveGUI = OnSaveGui;
+        modEntry!.OnUpdate = OnUpdate;
         //modEntry.Path
 
         
@@ -74,7 +75,31 @@ public static class Main
         if (ModConfigurationManager.Instance.GroupedSettings.TryGetValue("main", out _))
             return;
 
-        ModConfigurationManager.Instance.GroupedSettings.Add("main", [new PlaybackStop(), new ToggleBarks()]);
+        ModConfigurationManager.Instance.GroupedSettings.Add("main", [new PlaybackStop(), new ToggleBarks(), new PlaybackSpeedHold()]);
+    }
+
+    private static bool m_PlaybackSpeedApplied = false;
+
+    private static void OnUpdate(UnityModManager.ModEntry modEntry, float deltaTime)
+    {
+        if (!m_Loaded || !Enabled)
+            return;
+
+        var hold = PlaybackSpeedHold.Instance;
+        if (hold == null)
+            return;
+
+        if (hold.IsHeld())
+        {
+            // Push live so adjusting the slider while held takes effect immediately.
+            AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", Settings.AcceleratedPlaybackSpeed);
+            m_PlaybackSpeedApplied = true;
+        }
+        else if (m_PlaybackSpeedApplied)
+        {
+            AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", 0f);
+            m_PlaybackSpeedApplied = false;
+        }
     }
 
 

@@ -76,6 +76,13 @@ public static class MenuGUI
             GUILayout.EndHorizontal();
         }
 
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Accelerated speed (default key is ]) {Main.Settings.AcceleratedPlaybackSpeed.ToString("F2")}", GUILayout.ExpandWidth(false));
+        GUILayout.Space(10);
+        Main.Settings.AcceleratedPlaybackSpeed = GUILayout.HorizontalSlider(Main.Settings.AcceleratedPlaybackSpeed, 0, 100);
+        // Applied via the "Hold to apply playback speed" hotkey (default ]); see PlaybackSpeedHold / Main.OnUpdate.
+        GUILayout.EndHorizontal();
+
         AddColorPicker("Color on text hover", ref Main.Settings.ColorOnHover, "Hover color", ref Main.Settings.HoverColorR, ref Main.Settings.HoverColorG, ref Main.Settings.HoverColorB, ref Main.Settings.HoverColorA);
 
         GUILayout.BeginVertical("", GUI.skin.box);

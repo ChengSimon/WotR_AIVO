@@ -22,6 +22,8 @@ public class Settings : UnityModManager.ModSettings
 
     public float SoundDedupTimeout = 4f;
 
+    public float AcceleratedPlaybackSpeed = 60f;
+
     public override void Save(UnityModManager.ModEntry modEntry)
     {
         Save(this, modEntry);

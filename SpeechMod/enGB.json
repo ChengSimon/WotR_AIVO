@@ -1,0 +1,34 @@
+{
+  "Strings": {
+    "pas2k.aivomod.group.main": {
+      "Text": "Speech Mod"
+    },
+    "pas2k.aivomod.feature.playback.stop.description": {
+      "Text": "Stop playback"
+    },
+    "pas2k.aivomod.feature.playback.stop.tooltip-description": {
+      "Text": "Stops playback of AIVO TTS when it is playing."
+    },
+    "pas2k.aivomod.feature.playback.stop.notification": {
+      "Text": "AIVO: Playback stopped!"
+    },
+    "pas2k.aivomod.feature.barks.toggle.description": {
+      "Text": "Toggle barks."
+    },
+    "pas2k.aivomod.feature.barks.toggle.tooltip-description": {
+      "Text": "Toggles playback of barks ON or OFF."
+    },
+    "pas2k.aivomod.feature.barks.toggle.on.notification": {
+      "Text": "AIVO: Barks turned ON!"
+    },
+    "pas2k.aivomod.feature.barks.toggle.off.notification": {
+      "Text": "AIVO: Barks turned OFF!"
+    },
+    "pas2k.aivomod.feature.playback.speed.hold.description": {
+      "Text": "Hold to apply playback speed"
+    },
+    "pas2k.aivomod.feature.playback.speed.hold.tooltip-description": {
+      "Text": "While this key is held, TTS plays at the configured Accelerated speed; released, it plays at normal speed."
+    }
+  }
+}

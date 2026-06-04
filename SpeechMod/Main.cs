@@ -3,7 +3,6 @@ using AiVoiceoverMod.Configuration;
 using AiVoiceoverMod.KeyBinds;
 using AiVoiceoverMod.Unity;
 using AiVoiceoverMod.Unity.Extensions;
-using AiVoiceoverMod.Voice;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,8 +61,8 @@ public static class Main
         SetUpSettings();
         harmony.CreateClassProcessor(typeof(SettingsUIPatches)).Patch();
 
-
-        FuzzyResolver.LoadPreprocessedDatabase();
+        // The fuzzy index is built/loaded from a LocalizationManager.Init postfix (FuzzyResolver_Init_Patch),
+        // not here: at mod-load time SettingsRoot/CurrentLocale aren't ready, so the locale would be unknown.
 
         Debug.Log("WOTR AIVO Mod Initialized!");
         m_Loaded = true;

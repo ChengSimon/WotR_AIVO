@@ -1,4 +1,5 @@
 using Kingmaker;
+using Kingmaker.Localization;
 using Kingmaker.Sound;
 using Newtonsoft.Json;
 using System;
@@ -13,7 +14,24 @@ using UnityEngine;
 namespace AiVoiceoverMod.Voice;
 
 // ----------------------------
-// Precompiled format:
+// Source localization format (WOTR: Wrath_Data/StreamingAssets/Localization/<locale>.json):
+// {
+//   "$id": "1",                  <- Json.NET reference id at the root; ignored on read
+//   "strings": {
+//     "<GUID>": "text",          <- value is the string directly
+//     ...
+//   }
+// }
+// Kept in sync with JsonPreproc/Program.cs (the offline preprocessor).
+// ----------------------------
+public sealed class SourceRoot
+{
+    [JsonProperty("strings")]
+    public Dictionary<string, string> strings { get; set; } = new();
+}
+
+// ----------------------------
+// Precompiled index format (stored as compact JSON inside cache/<locale>.idxv1):
 // {
 //   "k": 64,
 //   "seeds": [u32, ...],
@@ -32,8 +50,8 @@ public sealed class PrecompiledDb
 
 public sealed class DbEntry
 {
-    public string id { get; set; } = "";     // GUID from your input
-    public string text { get; set; } = "";   // original text
+    public string id { get; set; } = "";     // GUID from the localization file
+    public string text { get; set; } = "";   // glossary-stripped text
     public uint[] sig { get; set; } = Array.Empty<uint>(); // MinHash signature
 }
 
@@ -46,6 +64,15 @@ public sealed class MinHasher
     public int K => _seeds.Length;
 
     public MinHasher(uint[] seeds) => _seeds = seeds;
+
+    public static uint[] MakeRandomSeeds(int k, int seed = 1337)
+    {
+        var s = new uint[k];
+        var rng = new System.Random(seed);
+        for (int i = 0; i < k; i++)
+            s[i] = (uint)rng.Next(int.MinValue, int.MaxValue) | 1u;
+        return s;
+    }
 
     public uint[] Signature(string s)
     {
@@ -170,11 +197,30 @@ public static class NGram
 // ----------------------------
 public sealed class FuzzyResolver
 {
+    private const string DefaultLocale = "enGB";
+    private const int DefaultSignatureSize = 64;
+    private const int DefaultSeed = 1337;
+
+    // Removes glossary markup, keeping the visible text: "{g|Encyclopedia:DC}DC{/g}" -> "DC".
+    // Must stay in sync with both the index builder and the runtime query cleaning below.
+    private static readonly Regex s_GlossaryRegex = new(@"\{g\|[^}]*\}|\{/g\}", RegexOptions.Compiled);
+    private static readonly Regex s_TagRegex = new("<[^>]+>", RegexOptions.Compiled);
+
     public static string s_ModDirectory;
     public static FuzzyResolver Singleton;
 
+    // Locale whose index is currently loaded into Singleton, so we can detect changes.
+    private static string s_LoadedLocale;
+
     public static bool ResolveAndPlay(string text, string kind, GameObject obj)
     {
+        EnsureDatabaseForCurrentLocale();
+
+        if (Singleton == null)
+        {
+            Debug.LogWarning("AIVO fuzzy resolver has no index loaded.");
+            return false;
+        }
 
         var mcName = Game.Instance?.Player?.MainCharacter.Value?.CharacterName;
         if (mcName != null)
@@ -183,8 +229,8 @@ public sealed class FuzzyResolver
             text = text.Replace(mcName, "{name}");
         }
         // Strip XML tags and glossary markup ({g|Encyclopedia:DC}DC{/g} -> DC), keeping the visible text.
-        var cleanText = new Regex("<[^>]+>").Replace(text, "");
-        cleanText = Regex.Replace(cleanText, @"\{g\|[^}]*\}|\{/g\}", "");
+        var cleanText = s_TagRegex.Replace(text, "");
+        cleanText = s_GlossaryRegex.Replace(cleanText, "");
         cleanText = cleanText.Trim();
 
         ResolveResult res = Singleton.Query(cleanText);
@@ -195,34 +241,142 @@ public sealed class FuzzyResolver
         return false;
     }
 
-    public static void LoadPreprocessedDatabase()
+    // Builds/loads the index for the current locale if it isn't already loaded. Cheap no-op when unchanged,
+    // so it is safe to call from the Init/OnLocaleChanged hooks and as a backstop on every resolve.
+    public static void EnsureDatabaseForCurrentLocale()
     {
-        UnityEngine.Debug.Log("Loading preprocessed database...");
+        var locale = GetCurrentLocaleName();
+        if (Singleton != null && string.Equals(s_LoadedLocale, locale, StringComparison.OrdinalIgnoreCase))
+            return;
+        LoadForLocale(locale);
+    }
+
+    private static string GetCurrentLocaleName()
+    {
         try
         {
-            s_ModDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var dbFile = Path.Combine(s_ModDirectory, "enGB-preprocessed.json");
+            if (LocalizationManager.Initialized)
+                return LocalizationManager.CurrentLocale.ToString();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"AIVO could not read current locale: {ex.Message}");
+        }
+        return DefaultLocale;
+    }
 
-            if (!File.Exists(dbFile))
+    private static void LoadForLocale(string locale)
+    {
+        EnsureModDirectory();
+        if (string.IsNullOrWhiteSpace(locale)) locale = DefaultLocale;
+
+        UnityEngine.Debug.Log($"AIVO loading index for locale {locale}...");
+        try
+        {
+            var indexFile = EnsureIndex(locale);
+
+            if (string.IsNullOrEmpty(indexFile) || !File.Exists(indexFile))
             {
-                UnityEngine.Debug.LogWarning($"Preprocessed database not found at: {dbFile}");
+                if (!string.Equals(locale, DefaultLocale, StringComparison.OrdinalIgnoreCase))
+                {
+                    UnityEngine.Debug.LogWarning($"AIVO index unavailable for {locale}; falling back to {DefaultLocale}.");
+                    LoadForLocale(DefaultLocale);
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning($"AIVO index unavailable for {DefaultLocale}.");
+                }
                 return;
             }
 
-            var json = File.ReadAllText(dbFile, Encoding.UTF8);
+            var json = File.ReadAllText(indexFile, Encoding.UTF8);
             var db = JsonConvert.DeserializeObject<PrecompiledDb>(json);
 
             if (db != null)
             {
                 Singleton = new FuzzyResolver(db);
-                UnityEngine.Debug.Log($"Loaded {db.entries.Count} entries from preprocessed database.");
+                s_LoadedLocale = locale;
+                UnityEngine.Debug.Log($"AIVO loaded {db.entries.Count} entries from {Path.GetFileName(indexFile)}.");
             }
         }
         catch (Exception ex)
         {
             UnityEngine.Debug.LogException(ex);
-            UnityEngine.Debug.LogWarning("Failed to load preprocessed database!");
+            UnityEngine.Debug.LogWarning($"AIVO failed to load index for {locale}!");
         }
+    }
+
+    // Ensures cache/<locale>.idxv1 exists and is newer than the game's localization file, (re)building it when
+    // missing or stale. Returns the index path, or a stale cache / null when the source file cannot be found.
+    private static string EnsureIndex(string locale)
+    {
+        var indexFile = GetIndexPath(locale);
+
+        // The localization JSON the game itself loads: Application.streamingAssetsPath is exactly what
+        // LocalizationManager reads through Owlcat's ApplicationPaths.streamingAssetsPath (it just caches
+        // Application.streamingAssetsPath at startup), so this always points at the file the game uses.
+        var sourceFile = string.IsNullOrEmpty(Application.streamingAssetsPath)
+            ? null
+            : Path.Combine(Application.streamingAssetsPath, "Localization", locale + ".json");
+
+        if (string.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile))
+        {
+            // No source to build from: fall back to a previously generated index if present.
+            UnityEngine.Debug.LogWarning($"AIVO could not find {locale}.json under StreamingAssets/Localization.");
+            return File.Exists(indexFile) ? indexFile : null;
+        }
+
+        if (File.Exists(indexFile) && File.GetLastWriteTimeUtc(indexFile) >= File.GetLastWriteTimeUtc(sourceFile))
+        {
+            return indexFile;
+        }
+
+        UnityEngine.Debug.Log($"AIVO building {Path.GetFileName(indexFile)} from {sourceFile}...");
+        var db = BuildIndex(sourceFile, DefaultSignatureSize, DefaultSeed);
+        Directory.CreateDirectory(Path.GetDirectoryName(indexFile));
+        File.WriteAllText(indexFile, JsonConvert.SerializeObject(db, Formatting.None), Encoding.UTF8);
+        UnityEngine.Debug.Log($"AIVO wrote {db.entries.Count} entries to {indexFile}.");
+        return indexFile;
+    }
+
+    private static PrecompiledDb BuildIndex(string inputPath, int k, int seed)
+    {
+        var src = JsonConvert.DeserializeObject<SourceRoot>(File.ReadAllText(inputPath, Encoding.UTF8));
+
+        if (src?.strings == null || src.strings.Count == 0)
+            throw new InvalidDataException($"Localization file has no strings: {inputPath}");
+
+        var seeds = MinHasher.MakeRandomSeeds(k, seed);
+        var mh = new MinHasher(seeds);
+        var entries = new List<DbEntry>(src.strings.Count);
+
+        foreach (var pair in src.strings)
+        {
+            // Strip glossary markup so the DB text/signature match the runtime query cleaning above.
+            var text = StripGlossary(pair.Value ?? "");
+            entries.Add(new DbEntry
+            {
+                id = pair.Key,
+                text = text,
+                sig = mh.Signature(text)
+            });
+        }
+
+        return new PrecompiledDb { k = k, seeds = seeds, entries = entries };
+    }
+
+    private static string StripGlossary(string s) => string.IsNullOrEmpty(s) ? s : s_GlossaryRegex.Replace(s, "");
+
+    private static string GetIndexPath(string locale)
+    {
+        EnsureModDirectory();
+        return Path.Combine(s_ModDirectory, "cache", locale + ".idxv1");
+    }
+
+    private static void EnsureModDirectory()
+    {
+        if (!string.IsNullOrEmpty(s_ModDirectory)) return;
+        s_ModDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
     }
 
     private readonly MinHasher _mh;

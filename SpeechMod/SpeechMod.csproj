@@ -35,9 +35,10 @@
     </ItemGroup>
     <ItemGroup>
         <None Include="Info.json" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
-        <None Include="enGB-preprocessed.json" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
         <None Include="place_tts_sound_files_here.txt" CopyToOutputDirectory="PreserveNewest" Link="soundbanks\%(Filename)%(Extension)" />
         <None Include="../README.md" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+        <None Include="clips.json" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+        <None Include="enGB.json" CopyToOutputDirectory="PreserveNewest" Link="Localization\%(Filename)%(Extension)" />
     </ItemGroup>
     <ItemGroup>
         <None Update="Localization\enGB.json">

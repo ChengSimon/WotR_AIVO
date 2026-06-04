@@ -3,6 +3,7 @@ using Kingmaker.Localization;
 using Kingmaker.Localization.Shared;
 using Newtonsoft.Json;
 using AiVoiceoverMod.Configuration;
+using AiVoiceoverMod.Voice;
 using System.Collections.Generic;
 using System.IO;
 
@@ -21,6 +22,7 @@ internal class ModLocalizationManager
     public static void Init()
     {
         _enPack = LoadPack(Locale.enGB);
+        LoadFuzzyIndex();
     }
 
     // WOTR has no LocalizationManager.LocaleChanged event (the RT API used .Instance as ILocalizationProvider).
@@ -30,6 +32,23 @@ internal class ModLocalizationManager
     public static void OnLocaleChanged_Postfix()
     {
         ApplyLocalization(LocalizationManager.CurrentLocale);
+        LoadFuzzyIndex();
+    }
+
+    // Builds/loads the fuzzy voiceover index for the current locale. Driven off the same Init/OnLocaleChanged
+    // postfixes above because that's when the correct locale becomes known (at mod-load time it isn't), and the
+    // OnLocaleChanged postfix is also how the in-game menu language picker is observed. EnsureDatabaseForCurrentLocale
+    // is a cheap no-op when the locale is unchanged, so calling it from both hooks is fine.
+    private static void LoadFuzzyIndex()
+    {
+        try
+        {
+            FuzzyResolver.EnsureDatabaseForCurrentLocale();
+        }
+        catch (System.Exception ex)
+        {
+            ModConfigurationManager.Instance?.ModEntry?.Logger?.Error($"Failed to load fuzzy voiceover index: {ex.Message}");
+        }
     }
 
     public static void ApplyLocalization(Locale currentLocale)

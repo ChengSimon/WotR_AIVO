@@ -23,6 +23,7 @@ internal class ModLocalizationManager
     {
         _enPack = LoadPack(Locale.enGB);
         LoadFuzzyIndex();
+        ClipCatalog.EnsureLoaded();
     }
 
     // WOTR has no LocalizationManager.LocaleChanged event (the RT API used .Instance as ILocalizationProvider).

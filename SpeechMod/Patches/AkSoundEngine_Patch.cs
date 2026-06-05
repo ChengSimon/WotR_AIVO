@@ -2,6 +2,7 @@
 using System;
 using UnityEngine;
 using System.Reflection;
+using AiVoiceoverMod.Voice;
 using Kingmaker.Localization;
 using Kingmaker.UI._ConsoleUI.Overtips;
 
@@ -28,6 +29,9 @@ public class AkSoundEngine_Patch
             return true;
         }
         if (in_pszEventName.StartsWith("evt_") && !in_pszEventName.StartsWith("ev_st")) {
+            // Barks disabled: don't play bark/skillcheck clips (their type comes from clips.json, keyed by guid).
+            if (ClipCatalog.IsSuppressedBark(in_pszEventName.Substring(4)))
+                return false;
             return !BarkExtensions.PlayedRecently(in_pszEventName);
         }
         return true;

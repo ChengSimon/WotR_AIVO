@@ -1,10 +1,8 @@
-# Warhammer 40K: Rogue Trader - AI Voiceover Mod
+# Pathfinder: Wrath of the Righteous - AI Voiceover Mod
 By [pas2k](https://github.com/pas2k)
 Based on [SpeechMod](https://github.com/Osmodium/W40KRogueTraderSpeechMod) by [Osmodium](https://github.com/Osmodium)
 
-
-Provides missing voiceover for Rogue Trader. Voice packs downloaded separately. Made with Chatterbox TTS.
-
+Provides missing voiceover for the Wrath of the Righteous. Voice packs downloaded separately. Made with Chatterbox TTS.
 
 ## Acknowledgements
 
@@ -15,37 +13,30 @@ This mod would not be possible without massive work put into its foundation, Spe
  - Despite my best efforts, might conflict with original SpeechMod
 
 ## How to install the mod 📝
- - Download the W40KRT_AIVOMod mod file and unzip.
- - Please note that the game comes with its own built in Unity Mod Manager so you do not need to install another one.
- - Navigate to %userprofile%\AppData\LocalLow\Owlcat Games\Warhammer 40000 Rogue Trader\UnityModManager\
- - Copy the W40KRT_AIVOMod folder into the UnityModManager folder
- - Copy your selected voice pack (.bnk file) into W40KRT_AIVOMod\soundbanks
- - Launch Warhammer 40K: Rogue Trader, you may need to hit ctrl+F10 to see the mod manager window.
+ - Download and install [Unity Mod Manager](https://www.nexusmods.com/site/mods/21).
+ - Install it for Pathfinder: Wrath of the Righteous.
+ - On Mods tab, click "Install Mod" or drop WOTR_AIVO.zip into a drop target.
+ - Navigate to (Wotr Install Location)\Pathfinder Second Adventure\Mods\WOTR_AIVO\soundbanks
+ - Unzip and copy [Voice Pack](https://www.nexusmods.com/games/pathfinderwrathoftherighteous/mods/1027) (.bnk file) into this soundbanks folder.
+ - Launch Pathfinder: Wrath of the Righteous, you may need to hit ctrl+F10 to see the mod manager window.
+ - When updating, press "Reload Mod" in the Mod Manager window, or remove .dll.\*.cache files from the mod directory
 
+## Features
+ - Barks can be toggled with Ctrl+B
+ - Playback can be stopped with Ctrl+S
+ - Modded sounds can be fast-forwarded with ] key, fast forward speed can be controlled in mod settings (Ctrl+F10)
+ - Shortcuts can be remapped in Settings->Sound
+ 
+## Voice pack
 
-## Available voiceover packs
+All voices were designed from scratch using Charvogen. No OwlCat games were used for training. Charvogen source is provided as a part of the voice pack, feel free to experiment and contribute better voices, as long as you didn't use samples from the original game to do it.
 
-### (Recommended) Common Voice-derived voicepack
+Voice pack for WotR can be downloaded [here](https://www.nexusmods.com/games/pathfinderwrathoftherighteous/mods/1027).
 
-Voices designed from scratch to imitate original characters, but without using the original voiceover in the process. No OwlCat games used for voice cloning, instead Charvogen and my own voice was used to convey the character.
-Charvogen source is provided, feel free to experiment and contribute better voices, as long as you didn't use samples from the original game to do it.
-
-[Download here](https://www.nexusmods.com/warhammer40kroguetrader/mods/429)
-
-
-### Voice-cloned characters from Rogue Trader
-
-Limited roster, limited genders, but most faithful representation to the game. Might have conflict of interests with voice actors, so might be taken down.
-
-[Download here](https://www.nexusmods.com/warhammer40kroguetrader/mods/430)
-
-
-## Known issues for the voiceover packs
+## Known issues
  - Shorter cues might have artifacts/repeats
- - The "computer diagogues" are funky
- - The pronounciation of some 40k-specific terms can be wrong/uneven
  - Due to difficulty of statically resolving dialogues, some voices might be wrong
  - Voices have a limited roster of emotions/archetypes
  - Barks sometimes overlap and are poorly attenuated by the the camera position
- - Since SoundBanksInfo.xml is not available for RT, the topology used is "Whatever works" instead of maybe better buses/mixers
- - Voice packs are only made for male Rogue Trader
+ - Voice packs are only made for male Crusader Commander
+ - In "Book Events", only the last entry is read aloud. Press Ctrl+S to stop.

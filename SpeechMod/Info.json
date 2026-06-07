@@ -1,11 +1,11 @@
 {
-  "Id": "W40KAIVO",
-  "DisplayName": "W40K - AI Voiceover",
+  "Id": "WOTR_AIVO",
+  "DisplayName": "WOTR - AI Voiceover",
   "Author": "pas2k",
   "ManagerVersion": "0.25.0",
   "Requirements": [],
-  "AssemblyName": "W40KRT_AIVOMod.dll",
+  "AssemblyName": "WOTR_AIVOMod.dll",
   "EntryMethod": "AiVoiceoverMod.Main.Load",
-  "HomePage": "https://www.nexusmods.com/warhammer40kroguetrader/mods/<TBD>",
+  "HomePage": "https://www.nexusmods.com/pathfinderwrathoftherighteous/mods/1028",
   "Version": "0.1.0"
 }

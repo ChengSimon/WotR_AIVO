@@ -92,13 +92,15 @@ public static class Main
         {
             // Push live so adjusting the slider while held takes effect immediately.
             AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", Settings.AcceleratedPlaybackSpeed);
+			AkSoundEngine.SetRTPCValue("AivoPitch", Settings.AcceleratedPitchCorrection);
             m_PlaybackSpeedApplied = true;
         }
-        else if (m_PlaybackSpeedApplied)
+        else
         {
-            AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", 0f);
-            m_PlaybackSpeedApplied = false;
-        }
+			AkSoundEngine.SetRTPCValue("AivoPlaybackSpeed", Settings.DefaultAcceleratedPlaybackSpeed);
+			AkSoundEngine.SetRTPCValue("AivoPitch", Settings.DefaultPitchCorrection);
+			m_PlaybackSpeedApplied = false;
+		}
     }
 
 
